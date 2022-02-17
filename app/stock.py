@@ -2,9 +2,6 @@ import yfinance as yf
 import sqlite3
 import json
 
-engine = sqlite3.connect("stock_database.db")
-cur = engine.cursor()
-
 class Stock:
     """
         Basic Usage
@@ -19,7 +16,6 @@ class Stock:
         # initialize tiker with ticker_symbol, db setting
         self.ticker = yf.Ticker(ticker_symbol)
         self._ticker_symbol = ticker_symbol
-        self._db = 'stock_database.db'
         self._tbl_name = '%s_table' %ticker_symbol 
 
     def getHistory(self, start_date, end_date, interval='1d'):
@@ -39,14 +35,14 @@ class Stock:
     
     def _existInDB(self, start_date, end_date, interval):
         # try:
-        tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
-        # query = 'SELECT COUNT(date) as count FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
-        query = 'SELECT COUNT(date) as count FROM %s' %(tbl_name)
-        result = cur.execute(query)
-        count, = result.fetchall()[0]
-        print("count %s" %count)
-        print(query)
-        return count != 0
+        # tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
+        # # query = 'SELECT COUNT(date) as count FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
+        # query = 'SELECT COUNT(date) as count FROM %s' %(tbl_name)
+        # result = cur.execute(query)
+        # count, = result.fetchall()[0]
+        # print("count %s" %count)
+        # print(query)
+        return False
         # except Exception:
         #     print("error")
         #     print("error")
@@ -54,19 +50,17 @@ class Stock:
         #     return False
 
     def _getHistoryFromDB(self, start_date, end_date, interval):
-        tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
-        query = 'SELECT * FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
-        result = cur.execute(query)
-        return result.fetchall()        
+        # tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
+        # query = 'SELECT * FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
+        # result = cur.execute(query)
+        # return result.fetchall()
+        return []
 
     def _getHistory(self, start_date, end_date, interval):
         self.result = self.ticker.history(start=start_date, end=end_date, interval=interval)
 
-
-
     def _save2DB(self, interval):
-        # !IMPORTANT: Save Data that is gained using getHistory. Must called after
-        con = sqlite3.connect(self._db)
+        # con = sqlite3.connect(self._db)
         columns={
             "Stock Splits": "stock_splits",
             "Open": "open",
@@ -77,9 +71,9 @@ class Stock:
             "Volume": "volume",
             "Dividends": "dividends"
         }
-        self.result.rename(columns=columns, inplace = True)
-        self.result.head(5)
-        self.result.to_sql('%s_%s_table' %(self._ticker_symbol, interval), con=con, if_exists='append', index = True)
+        # self.result.rename(columns=columns, inplace = True)
+        # self.result.head(5)
+        # self.result.to_sql('%s_%s_table' %(self._ticker_symbol, interval), con=con, if_exists='append', index = True)
 
     @property
     def ticker_symbol(self):
