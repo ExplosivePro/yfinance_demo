@@ -11,7 +11,7 @@ class Stock:
         result = ticker.getHistory("2020-01-02", "2020-01-10")
 
         ticker.ticker_symbol = "aapl"
-        result = ticker.getHistory("2020-01-02", "2020-01-10")
+        result = ticker.getHistory("2020-01-02", "2020-01-10", "1w")
     """
     
     def __init__(self, ticker_symbol):
@@ -21,18 +21,30 @@ class Stock:
         self._tbl_name = '%s_table' %ticker_symbol 
 
     def getHistory(self, start_date, end_date, interval='1d'):
+        '''
+            Get stock history information from db or yahoo finance and save it to db.
+
+            :param start_date: date from which start search
+            :param end_date: date to which start search
+            :param interval: search intensity, can be one of 1d, 1w and 1m
+
+            :return stock history information in JSON
+        '''
+
+        # If searched already, get from database
         if self._existInDB(start_date, end_date, interval):
             return self._getHistoryFromDB(self, start_date, end_date)
 
+        # Get stock information using yahoo finance api
         self._getHistory(start_date, end_date, interval)
 
-        # if result is empty(which is most likely that ticker_symbol is empty), no need to save it to db.
+        # if result is not empty, save to database
         if self.result.empty is False:
             self._save2DB(interval)
-        
+
+        # Convert Result to JSON object 
         json_result = self.result.to_json(orient="table")
         parsed = json.loads(json_result)
-
         return parsed
     
     def _existInDB(self, start_date, end_date, interval):
@@ -68,10 +80,26 @@ class Stock:
             return False
         
     def _getHistoryFromDB(self, start_date, end_date, interval):
+        '''
+            Get the previous search result stored in database
+
+            :param start_date: date from which start search
+            :param end_date: date to which start search
+            :param interval: search intensity, can be one of 1d, 1w and 1m
+
+            :return True if whole data exists in DB, False otherwise
+        '''
         db = SessionLocal()
         return get_history_count(db, self.ticker_symbol ,start_date, end_date, interval)
 
     def _getHistory(self, start_date, end_date, interval):
+        '''
+            Get stock history information from yahoo finance
+            
+            :param start_date: date from which start search
+            :param end_date: date to which start search
+            :param interval: search intensity, can be one of 1d, 1w and 1m
+        '''
         self.result = self.ticker.history(start=start_date, end=end_date, interval=interval)
 
     def _save2DB(self, interval):
