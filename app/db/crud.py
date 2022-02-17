@@ -7,29 +7,37 @@ from models import get_ticker_table
 from . import models, schemas
 
 
-def get_history(db: Session, start: String, end: String, interval: String):
+def get_history(db: Session, symbol: String, start: String, end: String, interval: String):
     """
-    summary: Get history between start to end date in the db. 
+    Get history between start to end date in the db. 
+    :param db: data base connection session
+    :param symbol: ticker symbol for which being searched
+    :param start: date from which start search
+    :param end: date to which start search
+    :param interval: search intensity which is one of '1d', '1w' and '1m'
 
     Example:
         from app.db.session import SessionLocal // update according to the current position
         db = SessionLocal()
         start = '2020-01-01'
         end = '2020-01-31'
-        history = get_history(db, start, end)
+        history = get_history(db,'aapl' ,start, end, '1d')
     
     !IMPORTANT
         start, end date format must be 'YYYY-MM-DD'
     """
     ticker_table = get_ticker_table(interval)
-    history = db.query(ticker_table).filter(ticker_table.date >= start, ticker_table.date <= end).all()
+    history = db.query(ticker_table).filter(ticker_table.date >= start, ticker_table.date <= end, ticker_table.symbol == symbol).all()
     if not history:
         raise HTTPException(status_code=404, detail="History not found")
     return history
 
 def create_history(db: Session, history, interval: String):
     """
-    summary: Save ticker history to db.
+    Save ticker history to db.
+    :param db: data base connection session
+    :param history: history item standing for the interval, i.e data for one day
+    :param interval: search intensity which is one of '1d', '1w' and '1m'
 
     Example: 
         from app.db.session import SessionLocal // update according to the current position
@@ -39,7 +47,7 @@ def create_history(db: Session, history, interval: String):
         item = {'date': '2020-01-02T00:00:00.000Z', 'open': 73.1920046399, 'high': 74.2692336173, 'low': 72.9325841905, 'close': 74.2074661255, 'volume': 135480400, 'dividends': 0, 'stock_splits': 0}
         item.date = datetime.fromisoformat(item['date'][:-1] + '+00:00').date()
 
-        history = create_history(db, item)
+        history = create_history(db, item, '1d')
     """
     ticker_table = get_ticker_table(interval)
     data = ticker_table(**history)
@@ -47,21 +55,22 @@ def create_history(db: Session, history, interval: String):
     db.commit()
     return data
 
-def get_history_count(db: Session, start: String, end: String, interval: String):
+def get_history_count(db: Session, symbol: String, start: String, end: String, interval: String):
     """
-    summary: Get number of history between start to end date in the db. 
+    Get number of history between start to end date in the db. 
+    :param db, start, end, interval: same as get_history
 
     Example:
         from app.db.session import SessionLocal // update according to the current position
         db = SessionLocal()
         start = '2020-01-01'
         end = '2020-01-31'
-        history = get_history_count(db, start, end)
+        history = get_history_count(db, 'aapl', start, end, '1d')
     
     !IMPORTANT
         start, end date format must be 'YYYY-MM-DD'
     """
     ticker_table = get_ticker_table(interval)
 
-    count = db.query(ticker_table).filter(ticker_table.date >= start, ticker_table.date <= end).count()
+    count = db.query(ticker_table).filter(ticker_table.date >= start, ticker_table.date <= end, ticker_table.symbol == symbol).count()
     return count

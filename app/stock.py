@@ -1,6 +1,8 @@
 import yfinance as yf
 import json
 from app.db.session import SessionLocal
+from app.db.crud import get_history_count
+from datetime import datetime
 
 class Stock:
     """
@@ -34,32 +36,54 @@ class Stock:
         return parsed
     
     def _existInDB(self, start_date, end_date, interval):
-        # try:
-        # tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
-        # # query = 'SELECT COUNT(date) as count FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
-        # query = 'SELECT COUNT(date) as count FROM %s' %(tbl_name)
-        # result = cur.execute(query)
-        # count, = result.fetchall()[0]
-        # print("count %s" %count)
-        # print(query)
-        return False
-        # except Exception:
-        #     print("error")
-        #     print("error")
+        '''
+            Check same search was already conducted before
+            Compare the size of the data in the database satisifying the condition and the expected search result size
+            
+            :param start_date: date from which start search
+            :param end_date: date to which start search
+            :param interval: search intensity, can be one of 1d, 1w and 1m
 
-        #     return False
+            :return True if whole data exists in DB, False otherwise
+        '''
+        db = SessionLocal()
+        try:
+            # Count of items that is searched already
+            count = get_history_count(db, self.ticker_symbol ,start_date, end_date, interval)
+            
+            # Calculate expected searh result size
+            date_format = "%m/%d/%Y"
+            start = datetime.strptime(start_date, date_format)
+            end = datetime.strptime(end_date, date_format)
+            delta = end - start
+            expected_count = delta.days
 
+            if interval == '1w':
+                expected_count = delta.weeks
+            elif interval == '1m':
+                expected_count = delta.month
+
+            return count == expected_count
+        finally:
+            return False
+        
     def _getHistoryFromDB(self, start_date, end_date, interval):
-        # tbl_name = '%s_%s_table' %(self._ticker_symbol, interval)
-        # query = 'SELECT * FROM %s WHERE date>=\'%s\' AND date<=\'%s\'' %(tbl_name, start_date, end_date)
-        # result = cur.execute(query)
-        # return result.fetchall()
-        return []
+        db = SessionLocal()
+        return get_history_count(db, self.ticker_symbol ,start_date, end_date, interval)
 
     def _getHistory(self, start_date, end_date, interval):
         self.result = self.ticker.history(start=start_date, end=end_date, interval=interval)
 
     def _save2DB(self, interval):
+        '''
+            Save Result that was gained using yfinance to database
+            
+            :param interval: Search Interval, one of '1d', '1w', '1m'
+            :return void
+
+            !IMPORTANT
+                Should be called after _getHistory function
+        '''
         db = SessionLocal()
         columns={
             "Date": "date",
