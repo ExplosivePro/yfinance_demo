@@ -14,8 +14,8 @@ def get_ticker_table(interval):
         volume = Column(BigInteger)
         stock_splits = Column(Integer)
         dividends = Column(Integer)
-        
-
+        def as_dict(self):
+            return {c.name: getattr(self, c.name) for c in self.__table__.columns}
     return TickerHistory
 
 
