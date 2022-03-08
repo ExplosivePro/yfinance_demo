@@ -74,17 +74,15 @@ class Stock:
         '''
         try:
             # Count of items that is searched already
-            count = get_history_count(self._db, self.ticker_symbol ,start, end, interval)
             # Calculate expected searh result size
-            # delta = end - start
-            # expected_count = rrule.rrule(rule.DAILY, dtstart=star, until=end).count() - 2:
-            # unit = rule.DAILY
-            # if interval == '1wk':
-            #     unit = rule.WEEKLY
-            # elif interval == '1mo':
-            #     expected_count = rule.MONTHLY
-            # return count == expected_count
-            return count != 0
+            delta = end - start
+            expected_count = rrule.rrule(rule.DAILY, dtstart=star, until=end).count() - 2:
+            unit = rule.DAILY
+            if interval == '1wk':
+                unit = rule.WEEKLY
+            elif interval == '1mo':
+                expected_count = rule.MONTHLY
+            return count == expected_count
         except Exception:
             return False
         
